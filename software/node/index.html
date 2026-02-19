@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html style="height: 100%;">
+   <head>
+      <meta charset = "UTF-8">
+      <title>L'arbitre de touche</title>
+   </head>
+   
+   <body style="min-height: 100%;">
+	<dialog id="weaponDialog">
+	  <form>
+	    <p>
+	        Choisissez une arme:
+	    </p>
+	    <div>
+	      <button name="armeButton" value="SABRE">Sabre</button>
+		  <button name="armeButton" value="EPEE">Epée</button>
+		  <button name="armeButton" value="FLEURET">Fleuret</button>
+	    </div>
+	  </form>
+	</dialog>
+	
+      <table style="width: 100%; min-height: 100%; border: 15px; background-color: lightgray;">
+		<td id="hitOnTargetA" style="background-color: #500000; height: 100%; width: 20%"></td>
+		<td id="hitOffTargetA" style="background-color: grey; width: 20%"></td>
+		<td style="width: 20%; text-align: center;"><p id="arme">⚙️ Connection en cours... </p><button onclick="updateWeapon()">⚔️</button></td>
+		<td id="hitOffTargetB" style="background-color: grey; width: 20%"></td>
+		<td id="hitOnTargetB" style="background-color: #003000; width: 20%"></td>
+      </table>
+	  <!--p>err: <div id="error"></div></p>
+	  <p>ports: <div id="ports"></div></p-->
+   </body>
+
+   <script src="./renderer.js"></script>
+</html>

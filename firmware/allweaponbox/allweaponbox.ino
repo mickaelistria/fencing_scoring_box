@@ -24,7 +24,7 @@
 //#define REPORT_TIMING     // prints timings over serial interface
 #define BUZZERTIME  1000  // length of time the buzzer is kept on after a hit (ms)
 #define LIGHTTIME   3000  // length of time the lights are kept on after a hit (ms)
-#define BAUDRATE   57600  // baudrate of the serial debug interface
+#define BAUDRATE    9600  // baudrate of the serial debug interface
 
 //============
 // Pin Setup
@@ -86,8 +86,14 @@ const long depress [] = { 14000,   2000,   1000};  // the minimum amount of time
 const uint8_t FOIL_MODE  = 0;
 const uint8_t EPEE_MODE  = 1;
 const uint8_t SABRE_MODE = 2;
-
-uint8_t currentMode = EPEE_MODE;
+const String WEAPON_NAMES[3] = { "FLEURET", "EPEE", "SABRE" };
+const uint8_t BLINKING[3][4] = {
+  { HIGH, HIGH, HIGH, LOW },
+  { HIGH, LOW, HIGH, LOW },
+  { HIGH, HIGH, HIGH, HIGH }
+  
+};
+uint8_t currentMode = SABRE_MODE;
 
 bool modeJustChangedFlag = false;
 
@@ -116,10 +122,11 @@ void setup() {
    pinMode(modePin, INPUT_PULLUP);
 
    // add the interrupt to the mode pin (interrupt is pin 0)
-   attachInterrupt(modePin-2, changeMode, FALLING);
+   attachInterrupt(digitalPinToInterrupt(modePin), changeMode, RISING);
    pinMode(modeLeds[0], OUTPUT);
    pinMode(modeLeds[1], OUTPUT);
    pinMode(modeLeds[2], OUTPUT);
+   pinMode(LED_BUILTIN, OUTPUT);
 
    // set the light pins to outputs
    pinMode(offTargetA, OUTPUT);
@@ -140,14 +147,14 @@ void setup() {
    //adcOpt();
 
    Serial.begin(BAUDRATE);
-   Serial.println("3 Weapon Scoring Box");
-   Serial.println("====================");
-   Serial.print  ("Mode : ");
-   Serial.println(currentMode);
-
+   tellMode();
    resetValues();
 }
 
+void tellMode() {
+   Serial.print("Mode changed to: ");
+   Serial.println(WEAPON_NAMES[currentMode]);
+}
 
 //=============
 // ADC config
@@ -182,6 +189,17 @@ void loop() {
    // use a while as a main loop as the loop() has too much overhead for fast analogReads
    // we get a 3-4% speed up on the loop this way
    while(1) {
+	  if (Serial.available()) {
+		  String input = Serial.readString();
+		  for (int i = 0; i < 3; i++) {
+			 if (WEAPON_NAMES[i].compareTo(input) == 0) {
+				 currentMode = i;
+				 setModeLeds();
+				 tellMode();
+			 }
+		  }
+	  }
+      updateBlinkingModeLed();
       checkIfModeChanged();
       // read analog pins
       weaponA = analogRead(weaponPinA);
@@ -219,6 +237,13 @@ void changeMode() {
    modeJustChangedFlag = true;
 }
 
+void updateBlinkingModeLed() {
+   long now = micros();
+   // span feeback blinking by 300ms per hit
+   now /= 300000; // to hit number
+   now %= sizeof(BLINKING[currentMode]) / sizeof(BLINKING[currentMode][0]);
+   digitalWrite(LED_BUILTIN, BLINKING[currentMode][now]);
+}
 
 //============================
 // Sets the correct mode led
@@ -252,16 +277,11 @@ void setModeLeds() {
 void checkIfModeChanged() {
  if (modeJustChangedFlag) {
       if (digitalRead(modePin)) {
-         if (currentMode == 2)
-            currentMode = 0;
-         else
-            currentMode++;
+    	 currentMode = (currentMode + 1) % 3;
       }
+      delay(500); // avoid pressure to cause more changes than expected
       setModeLeds();
-#ifdef DEBUG
-      Serial.print("Mode changed to: ");
-      Serial.println(currentMode);
-#endif
+      tellMode();
       modeJustChangedFlag = false;
    }
 }
@@ -483,6 +503,7 @@ void resetValues() {
    digitalWrite(onTargetB,  LOW);
    digitalWrite(shortLEDA,  LOW);
    digitalWrite(shortLEDB,  LOW);
+   Serial.println("Reset");
 
    lockedOut    = false;
    depressAtime = 0;

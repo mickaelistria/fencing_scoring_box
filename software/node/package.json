@@ -1,0 +1,30 @@
+{
+  "name": "l-arbitre-de-touche",
+  "version": "0.0.1",
+  "description": "Un boitier d'arbitrage d'escrime",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:mickaelistria/fencing_scoring_box.git"
+  },
+  "keywords": [
+    "escrime",
+    "fencing"
+  ],
+  "author": "Mickael Istria",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^26.4.0"
+  },
+  "dependencies": {
+    "serialport": "^10.3.0",
+    "tableify": "^1.1.1"
+  },
+  "engines": {
+    "node": "18.16.1",
+    "npm": "9.5.1"
+  }
+}
