@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html style="height: 100%;">
    <head>
@@ -12,9 +13,9 @@
 	        Choisissez une arme:
 	    </p>
 	    <div>
-	      <button name="armeButton" value="SABRE">Sabre</button>
-		  <button name="armeButton" value="EPEE">Epée</button>
-		  <button name="armeButton" value="FLEURET">Fleuret</button>
+	      <button name="armeButton" value="SABRE" style="font-size: inherit;">Sabre</button>
+		  <button name="armeButton" value="EPEE" style="font-size: inherit;">Epée</button>
+		  <button name="armeButton" value="FLEURET" style="font-size: inherit;">Fleuret</button>
 	    </div>
 	  </form>
 	</dialog>
@@ -22,7 +23,7 @@
       <table style="height:100%; width: 100%; position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: grey;">
 		<td id="hitOnTargetA" style="background-color: #500000; height: 100%; width: 20%; border: solid black 5px; text-align: center;"></td>
 		<td id="hitOffTargetA" style="background-color: grey; width: 20%; border: solid black 5px; text-align: center;"></td>
-		<td style="width: 20%; text-align: center;"><p id="arme">⚙️ Connection en cours... </p><button onclick="updateWeapon()">⚔️</button></td>
+		<td style="width: 20%; text-align: center;"><p id="arme">⚙️ Connection en cours... </p><button style="background-color: inherit; font-size:inherit;" type="button" onclick="updateWeapon()">⚔️</button></td>
 		<td id="hitOffTargetB" style="background-color: grey; width: 20%; border: solid black 5px; text-align: center;"></td>
 		<td id="hitOnTargetB" style="background-color: #003000; width: 20%; border: solid black 5px; text-align: center;"></td>
       </table>
