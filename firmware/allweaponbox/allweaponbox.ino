@@ -78,8 +78,6 @@ bool lockedOut    = false;
 const long lockout [] = {300000,  45000, 170000};  // the lockout time between hits
 const long depress [] = { 14000,   2000,   1000};  // the minimum amount of time the tip needs to be depressed
 
-
-
 //=================
 // mode constants
 //=================
@@ -415,10 +413,23 @@ void epee() {
 }
 
 
+bool isAbout(unsigned int millivolts, unsigned int capturedADC) {
+   unsigned int measuredVoltage = ((capturedADC * 40) /* no term must be > 2^16 ~= 60000 */ / 1024) * 125;
+   return abs(millivolts - measuredVoltage) < 500; // tolerance of 500mV, which is 10%
+}
+
 //===================
 // Main sabre method
 //===================
 void sabre() {
+
+	// Still failing cases: both fencers hit themselves with their weapon simulataneously
+	// EXPECTED: no light
+	// GOT: both lights
+	// analysis: Checking for the state if identical circuits is not enough, sabre seems to
+	// require a way to "sign" which weapon(s) are causing the hit. This could probably be
+	// achieved by using different resistances on each weapon to capute different voltages
+	// and deduce what weapon caused the hit.
 
    long now = micros();
    if (((hitOnTargA || hitOffTargA) && (depressAtime + lockout[2] < now)) || 
@@ -428,8 +439,10 @@ void sabre() {
 
    // weapon A
    if (hitOnTargA == false && hitOffTargA == false) { // ignore if A has already hit
+	   bool atRestWeaponA = isAbout(5000, weaponA);
+	   bool atRestLameB = isAbout(0, lameB);
       // on target
-      if (400 < weaponA && weaponA < 600 && 400 < lameB && lameB < 600) {
+      if (!atRestWeaponA && !atRestLameB) {
          if (!depressedA) {
             depressAtime = micros();
             depressedA   = true;
@@ -447,8 +460,10 @@ void sabre() {
 
    // weapon B
    if (hitOnTargB == false && hitOffTargB == false) { // ignore if B has already hit
+	   bool atRestWeaponB = isAbout(5000, weaponB);
+	   bool atRestLameA = isAbout(0, lameA);
       // on target
-      if (400 < weaponB && weaponB < 600 && 400 < lameA && lameA < 600) {
+      if (!atRestWeaponB && !atRestLameA) {
          if (!depressedB) {
             depressBtime = micros();
             depressedB   = true;
