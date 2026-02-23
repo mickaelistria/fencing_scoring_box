@@ -18,7 +18,7 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js')
         }
     })
-	mainWindow.setMenu(null);
+//	mainWindow.setMenu(null);
     // and load the index.html of the app.
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'index.html'),

@@ -45,7 +45,6 @@ port.on('data', function (data) {
   const text = new TextDecoder().decode(data);
   const lines = text.split(/\r?\n/);
   lines.forEach(line => {
-//	console.log(line);
 	if (line.startsWith("R")) {
 		document.getElementById('hitOnTargetA').style.backgroundColor = "red";
 		document.getElementById('hitOnTargetA').innerText = "Touche!";
@@ -59,13 +58,13 @@ port.on('data', function (data) {
 		document.getElementById('hitOnTargetB').style.backgroundColor = "green";		
 		document.getElementById('hitOnTargetB').innerText = "Touche!";
 	} else if (line.includes("0")) {
-		document.getElementById('hitOnTargetA').style.backgroundColor = "#500000";
+		document.getElementById('hitOnTargetA').style.backgroundColor = "#100000";
 		document.getElementById('hitOnTargetA').innerText = "";
-		document.getElementById('hitOffTargetA').style.backgroundColor = "grey";
+		document.getElementById('hitOffTargetA').style.backgroundColor = null;
 		document.getElementById('hitOffTargetA').innerText = "";
-		document.getElementById('hitOffTargetB').style.backgroundColor = "grey";
+		document.getElementById('hitOffTargetB').style.backgroundColor = null;
 		document.getElementById('hitOffTargetB').innerText = "";
-		document.getElementById('hitOnTargetB').style.backgroundColor = "#003000";
+		document.getElementById('hitOnTargetB').style.backgroundColor = "#001000";
 		document.getElementById('hitOnTargetB').innerText = "";
 	} else if (line.includes("EPEE")) {
 		document.getElementById("arme").innerText = "Epée";
