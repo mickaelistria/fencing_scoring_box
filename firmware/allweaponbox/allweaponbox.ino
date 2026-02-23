@@ -24,7 +24,7 @@
 //#define REPORT_TIMING     // prints timings over serial interface
 #define BUZZERTIME  1000  // length of time the buzzer is kept on after a hit (ms)
 #define LIGHTTIME   3000  // length of time the lights are kept on after a hit (ms)
-#define BAUDRATE    9600  // baudrate of the serial debug interface
+#define BAUDRATE    57600  // baudrate of the serial debug interface
 
 //============
 // Pin Setup
@@ -98,12 +98,12 @@ bool modeJustChangedFlag = false;
 //=========
 // states
 //=========
-boolean depressedA  = false;
-boolean depressedB  = false;
-boolean hitOnTargA  = false;
-boolean hitOffTargA = false;
-boolean hitOnTargB  = false;
-boolean hitOffTargB = false;
+boolean depressedRed  = false;
+boolean depressedGreen  = false;
+boolean hitOnTargRed  = false;
+boolean hitOffTargRed = false;
+boolean hitOnTargGreen  = false;
+boolean hitOffTargGreen = false;
 
 #ifdef TEST_ADC_SPEED
 long now;
@@ -291,69 +291,69 @@ void checkIfModeChanged() {
 void foil() {
 
    long now = micros();
-   if (((hitOnTargA || hitOffTargA) && (depressAtime + lockout[0] < now)) || 
-       ((hitOnTargB || hitOffTargB) && (depressBtime + lockout[0] < now))) {
+   if (((hitOnTargRed || hitOffTargRed) && (depressAtime + lockout[0] < now)) ||
+       ((hitOnTargGreen || hitOffTargGreen) && (depressBtime + lockout[0] < now))) {
       lockedOut = true;
    }
 
    // weapon A
-   if (hitOnTargA == false && hitOffTargA == false) { // ignore if A has already hit
+   if (hitOnTargRed == false && hitOffTargRed == false) { // ignore if A has already hit
       // off target
       if (900 < weaponA && lameB < 100) {
-         if (!depressedA) {
+         if (!depressedRed) {
             depressAtime = micros();
-            depressedA   = true;
+            depressedRed   = true;
          } else {
             if (depressAtime + depress[0] <= micros()) {
-               hitOffTargA = true;
+               hitOffTargRed = true;
             }
          }
       } else {
       // on target
          if (400 < weaponA && weaponA < 600 && 400 < lameB && lameB < 600) {
-            if (!depressedA) {
+            if (!depressedRed) {
                depressAtime = micros();
-               depressedA   = true;
+               depressedRed   = true;
             } else {
                if (depressAtime + depress[0] <= micros()) {
-                  hitOnTargA = true;
+                  hitOnTargRed = true;
                }
             }
          } else {
             // reset these values if the depress time is short.
             depressAtime = 0;
-            depressedA   = 0;
+            depressedRed   = 0;
          }
       }
    }
 
    // weapon B
-   if (hitOnTargB == false && hitOffTargB == false) { // ignore if B has already hit
+   if (hitOnTargGreen == false && hitOffTargGreen == false) { // ignore if B has already hit
       // off target
       if (900 < weaponB && lameA < 100) {
-         if (!depressedB) {
+         if (!depressedGreen) {
             depressBtime = micros();
-            depressedB   = true;
+            depressedGreen   = true;
          } else {
             if (depressBtime + depress[0] <= micros()) {
-               hitOffTargB = true;
+               hitOffTargGreen = true;
             }
          }
       } else {
       // on target
          if (400 < weaponB && weaponB < 600 && 400 < lameA && lameA < 600) {
-            if (!depressedB) {
+            if (!depressedGreen) {
                depressBtime = micros();
-               depressedB   = true;
+               depressedGreen   = true;
             } else {
                if (depressBtime + depress[0] <= micros()) {
-                  hitOnTargB = true;
+                  hitOnTargGreen = true;
                }
             }
          } else {
             // reset these values if the depress time is short.
             depressBtime = 0;
-            depressedB   = 0;
+            depressedGreen   = 0;
          }
       }
    }
@@ -365,48 +365,48 @@ void foil() {
 //===================
 void epee() {
    long now = micros();
-   if ((hitOnTargA && (depressAtime + lockout[1] < now)) || (hitOnTargB && (depressBtime + lockout[1] < now))) {
+   if ((hitOnTargRed && (depressAtime + lockout[1] < now)) || (hitOnTargGreen && (depressBtime + lockout[1] < now))) {
       lockedOut = true;
    }
 
    // weapon A
    //  no hit for A yet    && weapon depress    && opponent lame touched
-   if (hitOnTargA == false) {
+   if (hitOnTargRed == false) {
       if (400 < weaponA && weaponA < 600 && 400 < lameA && lameA < 600) {
-         if (!depressedA) {
+         if (!depressedRed) {
             depressAtime = micros();
-            depressedA   = true;
+            depressedRed   = true;
          } else {
             if (depressAtime + depress[1] <= micros()) {
-               hitOnTargA = true;
+               hitOnTargRed = true;
             }
          }
       } else {
          // reset these values if the depress time is short.
-         if (depressedA == true) {
+         if (depressedRed == true) {
             depressAtime = 0;
-            depressedA   = 0;
+            depressedRed   = 0;
          }
       }
    }
 
    // weapon B
    //  no hit for B yet    && weapon depress    && opponent lame touched
-   if (hitOnTargB == false) {
+   if (hitOnTargGreen == false) {
       if (400 < weaponB && weaponB < 600 && 400 < lameB && lameB < 600) {
-         if (!depressedB) {
+         if (!depressedGreen) {
             depressBtime = micros();
-            depressedB   = true;
+            depressedGreen   = true;
          } else {
             if (depressBtime + depress[1] <= micros()) {
-               hitOnTargB = true;
+               hitOnTargGreen = true;
             }
          }
       } else {
          // reset these values if the depress time is short.
-         if (depressedB == true) {
+         if (depressedGreen == true) {
             depressBtime = 0;
-            depressedB   = 0;
+            depressedGreen   = 0;
          }
       }
    }
@@ -432,50 +432,50 @@ void sabre() {
 	// and deduce what weapon caused the hit.
 
    long now = micros();
-   if (((hitOnTargA || hitOffTargA) && (depressAtime + lockout[2] < now)) || 
-       ((hitOnTargB || hitOffTargB) && (depressBtime + lockout[2] < now))) {
+   if (((hitOnTargRed || hitOffTargRed) && (depressAtime + lockout[2] < now)) ||
+       ((hitOnTargGreen || hitOffTargGreen) && (depressBtime + lockout[2] < now))) {
       lockedOut = true;
    }
 
    // weapon A
-   if (hitOnTargA == false && hitOffTargA == false) { // ignore if A has already hit
+   if (hitOnTargRed == false && hitOffTargRed == false) { // ignore if A has already hit
 	   bool atRestWeaponA = isAbout(5000, weaponA);
 	   bool atRestLameB = isAbout(0, lameB);
       // on target
       if (!atRestWeaponA && !atRestLameB) {
-         if (!depressedA) {
+         if (!depressedRed) {
             depressAtime = micros();
-            depressedA   = true;
+            depressedRed   = true;
          } else {
             if (depressAtime + depress[2] <= micros()) {
-               hitOnTargA = true;
+               hitOnTargRed = true;
             }
          }
       } else {
          // reset these values if the depress time is short.
          depressAtime = 0;
-         depressedA   = 0;
+         depressedRed   = 0;
       }
    }
 
    // weapon B
-   if (hitOnTargB == false && hitOffTargB == false) { // ignore if B has already hit
+   if (hitOnTargGreen == false && hitOffTargGreen == false) { // ignore if B has already hit
 	   bool atRestWeaponB = isAbout(5000, weaponB);
 	   bool atRestLameA = isAbout(0, lameA);
       // on target
       if (!atRestWeaponB && !atRestLameA) {
-         if (!depressedB) {
+         if (!depressedGreen) {
             depressBtime = micros();
-            depressedB   = true;
+            depressedGreen   = true;
          } else {
             if (depressBtime + depress[2] <= micros()) {
-               hitOnTargB = true;
+               hitOnTargGreen = true;
             }
          }
       } else {
          // reset these values if the depress time is short.
          depressBtime = 0;
-         depressedB   = 0;
+         depressedGreen   = 0;
       }
    }
 }
@@ -487,19 +487,28 @@ void sabre() {
 void signalHits() {
    // non time critical, this is run after a hit has been detected
    if (lockedOut) {
-      digitalWrite(onTargetA,  hitOnTargA);
-      digitalWrite(offTargetA, hitOffTargA);
-      digitalWrite(offTargetB, hitOffTargB);
-      digitalWrite(onTargetB,  hitOnTargB);
+      digitalWrite(onTargetA,  hitOnTargRed);
+      digitalWrite(offTargetA, hitOffTargRed);
+      digitalWrite(offTargetB, hitOffTargGreen);
+      digitalWrite(onTargetB,  hitOnTargGreen);
       digitalWrite(buzzerPin,  HIGH);
-#ifdef DEBUG
-      String serData = String("hitOnTargA  : ") + hitOnTargA  + "\n"
-                            + "hitOffTargA : "  + hitOffTargA + "\n"
-                            + "hitOffTargB : "  + hitOffTargB + "\n"
-                            + "hitOnTargB  : "  + hitOnTargB  + "\n"
-                            + "Locked Out  : "  + lockedOut   + "\n";
-      Serial.println(serData);
-#endif
+      // For serial
+      String serData = "";
+      if (hitOnTargRed) {
+    	  serData = serData + "R\n";
+      }
+      if (hitOffTargRed) {
+		  serData = serData + "r\n";
+      }
+      if (hitOnTargGreen) {
+    	  serData = serData + "G\n";
+      }
+      if (hitOnTargGreen) {
+    	  serData = serData + "g\n";
+      }
+      if (serData.length() > 0) {
+    	  Serial.println(serData);
+      }
       resetValues();
    }
 }
@@ -518,18 +527,18 @@ void resetValues() {
    digitalWrite(onTargetB,  LOW);
    digitalWrite(shortLEDA,  LOW);
    digitalWrite(shortLEDB,  LOW);
-   Serial.println("Reset");
+   Serial.println("0");
 
    lockedOut    = false;
    depressAtime = 0;
-   depressedA   = false;
+   depressedRed   = false;
    depressBtime = 0;
-   depressedB   = false;
+   depressedGreen   = false;
 
-   hitOnTargA  = false;
-   hitOffTargA = false;
-   hitOnTargB  = false;
-   hitOffTargB = false;
+   hitOnTargRed  = false;
+   hitOffTargRed = false;
+   hitOnTargGreen  = false;
+   hitOffTargGreen = false;
 
    delay(100);
 }

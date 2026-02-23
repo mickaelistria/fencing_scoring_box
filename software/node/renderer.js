@@ -38,7 +38,7 @@ function updateWeapon() {
 
 const port = new SerialPort({
   path: '/dev/ttyUSB0',
-  baudRate: 9600,
+  baudRate: 57600,
 });
 // Switches the port into "flowing mode"
 port.on('data', function (data) {
@@ -46,19 +46,19 @@ port.on('data', function (data) {
   const lines = text.split(/\r?\n/);
   lines.forEach(line => {
 //	console.log(line);
-	if (line.includes("hitOnTargA") && line.includes("1")) {
+	if (line.startsWith("R")) {
 		document.getElementById('hitOnTargetA').style.backgroundColor = "red";
 		document.getElementById('hitOnTargetA').innerText = "Touche!";
-	} else if (line.includes("hitOffTargA") && line.includes("1")) {
+	} else if (line.startsWith("r")) {
 		document.getElementById('hitOffTargetA').style.backgroundColor = "lightyellow";
 		document.getElementById('hitOffTargetA').innerText = "Touche!";
-	} else if (line.includes("hitOffTargB") && line.includes("1")) {
+	} else if (line.startsWith("g")) {
 		document.getElementById('hitOffTargetB').style.backgroundColor = "lightyellow";	
 		document.getElementById('hitOffTargetB').innerText = "Touche!";
-	} else if (line.includes("hitOnTargB") && line.includes("1")) {
+	} else if (line.startsWith("G")) {
 		document.getElementById('hitOnTargetB').style.backgroundColor = "green";		
 		document.getElementById('hitOnTargetB').innerText = "Touche!";
-	} else if (line.includes("Reset")) {
+	} else if (line.includes("0")) {
 		document.getElementById('hitOnTargetA').style.backgroundColor = "#500000";
 		document.getElementById('hitOnTargetA').innerText = "";
 		document.getElementById('hitOffTargetA').style.backgroundColor = "grey";
