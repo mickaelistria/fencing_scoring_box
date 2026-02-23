@@ -8,12 +8,13 @@ It currently supports
   * Current weapon
   * Lights for hits
 * Control to switch weapon
+* Control to choosing the board to connect with
+* (Non-functional yet) control to configure timings
 
 We hope to add support for
-* Choosing the board to connect with
-* Passing some configuration
-* Allowing faster baudrate and shorter messages to improve reactivity
-* targeting mobile device (eg Android) with eg a Cordova package 
+* Passing/reading timing configuration
+* Provide assistance in choosing a board to connect to
+* targeting mobile device (eg Android) with eg. a Cordova package 
 
 ## Technologies
 

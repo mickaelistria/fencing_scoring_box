@@ -13,9 +13,57 @@
 	        Choisissez une arme:
 	    </p>
 	    <div>
-	      <button name="armeButton" value="SABRE" style="font-size: inherit;">Sabre</button>
-		  <button name="armeButton" value="EPEE" style="font-size: inherit;">Epée</button>
-		  <button name="armeButton" value="FLEURET" style="font-size: inherit;">Fleuret</button>
+	      <button type="button" onclick='selectWeapon("SABRE");' style="font-size: inherit;">Sabre</button>
+		  <button type="button" onclick='selectWeapon("EPEE");' style="font-size: inherit;">Epée</button>
+		  <button type="button" onclick='selectWeapon("FLEURET");' style="font-size: inherit;">Fleuret</button>
+	    </div>
+	  </form>
+	</dialog>
+
+	<dialog id="connectionDialog">
+	  <form>
+	    <p>
+	        Connexion avec la carte: <input type="text" id="serialConnection" style="font-size: inherit;"></input>
+		</p>
+		<p>
+			Baudrate: <input type="text" id="baudrate" style="font-size: inherit;"></input>
+	    </p>
+	    <div>
+	      <button name="validerConnexion" type="button" style="font-size: inherit;" onclick="updatePortFromUI();document.getElementById('connectionDialog').close(null)">✔ Valider</button>
+		  <button name="annuler" type="button" style="font-size: inherit;" onclick="document.getElementById('connectionDialog').close(null)">❌ Annuler</button>
+	    </div>
+	  </form>
+	</dialog>
+
+	<dialog id="configuration">
+	  <form>
+	    <p>
+	        Règles et des temps
+	    </p>
+		<table>
+			<tr>
+				<td></td>
+				<td>Sabre</td>
+				<td>Epée</td>
+				<td>Fleuret</td>
+			</tr>
+			<tr>
+				<td>Durée min d'une touche (nanosecondes)</td>
+				<td><input type="text" id="SABRE.depress"/></td>
+				<td><input type="text" id="EPEE.depress"/></td>
+				<td><input type="text" id="FLEURET.depress"/></td>
+			</tr>
+			<tr>
+				<td>Temps possible pour une double-touche (nanosecondes)</td>
+				<td><input type="text" id="SABRE.lockout"/></td>
+				<td><input type="text" id="EPEE.lockout"/></td>
+				<td><input type="text" id="FLEURET.lockout"/></td>
+			</tr>
+		</table>
+	    <div>
+	      <button name="validerTemps" style="font-size: inherit;">✔ Valider</button>
+		  <button name="annuler" style="font-size: inherit;">❌ Annuler</button>
+		  <button name="resetFie" style="font-size: inherit;">Utiliser valeurs <a style="font-weight: bold;">FIE</a></button>
 	    </div>
 	  </form>
 	</dialog>
@@ -23,7 +71,14 @@
       <table style="height:100%; width: 100%; position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: #101010;">
 		<td id="hitOnTargetA" style="background-color: #100000; height: 100%; width: 20%; border: solid black 5px; text-align: center;"></td>
 		<td id="hitOffTargetA" style="width: 20%; border: solid black 5px; text-align: center;"></td>
-		<td style="width: 20%; text-align: center; color: white"><p id="arme">⚙️ Connection en cours... </p><button style="background-color: inherit; font-size:inherit;" type="button" onclick="updateWeapon()">⚔️</button></td>
+		<td style="width: 20%; position: relative; text-align: center;">
+			<p id="arme" style="color: white">⚙️ Connection en cours... </p>
+			<button style="background-color: inherit; font-size:inherit;" type="button" onclick='document.getElementById("weaponDialog").showModal()'>⚔️</button>
+			<div style="position: absolute; bottom: 0;">
+				<button style="background-color: inherit; font-size:inherit;" type="button" onclick='document.getElementById("connectionDialog").showModal()'>🔌</button>
+				<button style="background-color: inherit; font-size:inherit;" type="button" onclick='document.getElementById("configuration").showModal()'>⏱️</button>
+			</div>
+		</td>
 		<td id="hitOffTargetB" style="width: 20%; border: solid black 5px; text-align: center;"></td>
 		<td id="hitOnTargetB" style="background-color: #001000; width: 20%; border: solid black 5px; text-align: center;"></td>
       </table>

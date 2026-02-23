@@ -24,9 +24,16 @@ async function listSerialPorts() {
   })
 }
 
-function updateWeapon() {
-	document.getElementById("weaponDialog").showModal();
+function updateConnectionValues() {
+	document.getElementById("serialConnection").value = port.path;
+	document.getElementById("baudrate").value = port.baudRate;
 }
+function selectWeapon(weapon) {
+	port.write(weapon);
+	document.getElementById("weaponDialog").close(weapon);
+}
+
+var port = {};
 
 //function listPorts() {
 //  listSerialPorts();
@@ -36,58 +43,67 @@ function updateWeapon() {
 //// This timeout reschedules itself.
 //setTimeout(listPorts, 2000);
 
-const port = new SerialPort({
-  path: '/dev/ttyUSB0',
-  baudRate: 57600,
-});
-// Switches the port into "flowing mode"
-port.on('data', function (data) {
-  const text = new TextDecoder().decode(data);
-  const lines = text.split(/\r?\n/);
-  lines.forEach(line => {
-	if (line.startsWith("R")) {
-		document.getElementById('hitOnTargetA').style.backgroundColor = "red";
-		document.getElementById('hitOnTargetA').innerText = "Touche!";
-	} else if (line.startsWith("r")) {
-		document.getElementById('hitOffTargetA').style.backgroundColor = "lightyellow";
-		document.getElementById('hitOffTargetA').innerText = "Touche!";
-	} else if (line.startsWith("g")) {
-		document.getElementById('hitOffTargetB').style.backgroundColor = "lightyellow";	
-		document.getElementById('hitOffTargetB').innerText = "Touche!";
-	} else if (line.startsWith("G")) {
-		document.getElementById('hitOnTargetB').style.backgroundColor = "green";		
-		document.getElementById('hitOnTargetB').innerText = "Touche!";
-	} else if (line.includes("0")) {
-		document.getElementById('hitOnTargetA').style.backgroundColor = "#100000";
-		document.getElementById('hitOnTargetA').innerText = "";
-		document.getElementById('hitOffTargetA').style.backgroundColor = null;
-		document.getElementById('hitOffTargetA').innerText = "";
-		document.getElementById('hitOffTargetB').style.backgroundColor = null;
-		document.getElementById('hitOffTargetB').innerText = "";
-		document.getElementById('hitOnTargetB').style.backgroundColor = "#001000";
-		document.getElementById('hitOnTargetB').innerText = "";
-	} else if (line.includes("EPEE")) {
-		document.getElementById("arme").innerText = "Epée";
-	} else if (line.includes("SABRE")) {
-		document.getElementById("arme").innerText = "Sabre";
-	} else if (line.includes("FLEURET")) {
-		document.getElementById("arme").innerText = "Fleuret";
-	}
-  });
-});
+var serialLog = [];
+var port = null;
 
-const weapongDialog = document.getElementById("weaponDialog");
-weapongDialog.addEventListener("close", (e) => {
-	const ret = weapongDialog.returnValue;
-    port.write(ret, err => {
-		if (err) {
-			console.log(err);
+function setupSerialPort(path, baudrate) {
+	if (port) {
+		port.close();
+		port = null;
+	}
+	serialLog = [];
+	port = new SerialPort({
+	  path: path,
+	  baudRate: baudrate,
+	});
+	// Switches the port into "flowing mode"
+	port.on('data', function (data) {
+	  const text = new TextDecoder().decode(data);
+	  serialLog.push({text: text, time: Date.now(), isError: false});
+	  const lines = text.split(/\r?\n/);
+	  lines.forEach(line => {
+		if (line.startsWith("R")) {
+			document.getElementById('hitOnTargetA').style.backgroundColor = "red";
+			document.getElementById('hitOnTargetA').innerText = "Touche!";
+		} else if (line.startsWith("r")) {
+			document.getElementById('hitOffTargetA').style.backgroundColor = "lightyellow";
+			document.getElementById('hitOffTargetA').innerText = "Touche!";
+		} else if (line.startsWith("g")) {
+			document.getElementById('hitOffTargetB').style.backgroundColor = "lightyellow";	
+			document.getElementById('hitOffTargetB').innerText = "Touche!";
+		} else if (line.startsWith("G")) {
+			document.getElementById('hitOnTargetB').style.backgroundColor = "green";		
+			document.getElementById('hitOnTargetB').innerText = "Touche!";
+		} else if (line.includes("0")) {
+			document.getElementById('hitOnTargetA').style.backgroundColor = "#100000";
+			document.getElementById('hitOnTargetA').innerText = "";
+			document.getElementById('hitOffTargetA').style.backgroundColor = null;
+			document.getElementById('hitOffTargetA').innerText = "";
+			document.getElementById('hitOffTargetB').style.backgroundColor = null;
+			document.getElementById('hitOffTargetB').innerText = "";
+			document.getElementById('hitOnTargetB').style.backgroundColor = "#001000";
+			document.getElementById('hitOnTargetB').innerText = "";
+		} else if (line.includes("EPEE")) {
+			document.getElementById("arme").innerText = "Epée";
+		} else if (line.includes("SABRE")) {
+			document.getElementById("arme").innerText = "Sabre";
+		} else if (line.includes("FLEURET")) {
+			document.getElementById("arme").innerText = "Fleuret";
 		}
+	  });
 	});
-});
-document.getElementsByName("armeButton").forEach(button => {
-	button.addEventListener("click", (event) => {
-	  event.preventDefault(); // Nous ne voulons pas soumettre ce faux formulaire
-	  weapongDialog.close(button.value); // Il faut envoyer la valeur du sélecteur ici.
+	port.on('error', err => {
+		serialLog.push({text: err.message, time: Date.now(), isError: true});
 	});
-});
+	updateConnectionValues();
+}
+
+
+function updatePortFromUI() {
+	document.getElementById("arme").innerHTML = "⚙️ Connection en cours...";
+	const baudrate = parseInt(document.getElementById("baudrate").value);
+	const serialPath = document.getElementById("serialConnection").value;
+	setupSerialPort(serialPath, baudrate);
+}
+setupSerialPort('/dev/ttyUSB0', 57600);
+
