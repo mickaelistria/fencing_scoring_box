@@ -195,7 +195,6 @@ void loop() {
       weaponB = analogRead(weaponPinB);
       lameA   = analogRead(lamePinA);
       lameB   = analogRead(lamePinB);
-      signalHits();
       if      (currentMode == FOIL_MODE)
          foil();
       else if (currentMode == EPEE_MODE)
@@ -260,12 +259,6 @@ void readSerial() {
             if (tableToSet > 0) {
                long value = input.substring(indexOfEquals + 1, input.length()).toInt();
                if (value > 0) {
-                  if (tableToSet == lockout) {
-                     Serial.print("lockout[");
-                  }
-                  Serial.print(weaponId);
-                  Serial.print("]=");
-                  Serial.println(value);
                   tableToSet[weaponId] = value;
                }
             }
@@ -340,7 +333,7 @@ void foil() {
    long now = micros();
    if (((hitOnTargRed || hitOffTargRed) && (depressAtime + lockout[0] < now)) ||
        ((hitOnTargGreen || hitOffTargGreen) && (depressBtime + lockout[0] < now))) {
-      lockedOut = true;
+      resetValues();
    }
 
    // weapon A
@@ -352,7 +345,7 @@ void foil() {
             depressedRed   = true;
          } else {
             if (depressAtime + depress[0] <= micros()) {
-               hitOffTargRed = true;
+               signalHits(false, true, false, false);
             }
          }
       } else {
@@ -363,7 +356,7 @@ void foil() {
                depressedRed   = true;
             } else {
                if (depressAtime + depress[0] <= micros()) {
-                  hitOnTargRed = true;
+                  signalHits(true, false, false, false);
                }
             }
          } else {
@@ -383,7 +376,7 @@ void foil() {
             depressedGreen   = true;
          } else {
             if (depressBtime + depress[0] <= micros()) {
-               hitOffTargGreen = true;
+            	signalHits(false, false, true, false);
             }
          }
       } else {
@@ -394,7 +387,7 @@ void foil() {
                depressedGreen   = true;
             } else {
                if (depressBtime + depress[0] <= micros()) {
-                  hitOnTargGreen = true;
+                  signalHits(false, false, false, true);
                }
             }
          } else {
@@ -413,7 +406,7 @@ void foil() {
 void epee() {
    long now = micros();
    if ((hitOnTargRed && (depressAtime + lockout[1] < now)) || (hitOnTargGreen && (depressBtime + lockout[1] < now))) {
-      lockedOut = true;
+      resetValues();
    }
 
    // weapon A
@@ -425,7 +418,7 @@ void epee() {
             depressedRed   = true;
          } else {
             if (depressAtime + depress[1] <= micros()) {
-               hitOnTargRed = true;
+               signalHits(true, false, false, false);
             }
          }
       } else {
@@ -446,7 +439,7 @@ void epee() {
             depressedGreen   = true;
          } else {
             if (depressBtime + depress[1] <= micros()) {
-               hitOnTargGreen = true;
+            	signalHits(false, false, false, true);
             }
          }
       } else {
@@ -481,7 +474,7 @@ void sabre() {
    long now = micros();
    if (((hitOnTargRed || hitOffTargRed) && (depressAtime + lockout[2] < now)) ||
        ((hitOnTargGreen || hitOffTargGreen) && (depressBtime + lockout[2] < now))) {
-      lockedOut = true;
+      resetValues();
    }
 
    // weapon A
@@ -495,7 +488,7 @@ void sabre() {
             depressedRed   = true;
          } else {
             if (depressAtime + depress[2] <= micros()) {
-               hitOnTargRed = true;
+               signalHits(true, false, false, false);
             }
          }
       } else {
@@ -516,7 +509,7 @@ void sabre() {
             depressedGreen   = true;
          } else {
             if (depressBtime + depress[2] <= micros()) {
-               hitOnTargGreen = true;
+               signalHits(false, false, false, true);
             }
          }
       } else {
@@ -531,32 +524,30 @@ void sabre() {
 //==============
 // Signal Hits
 //==============
-void signalHits() {
+void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTargGreen, bool justHitOnTargGreen) {
    // non time critical, this is run after a hit has been detected
-   if (lockedOut) {
-      digitalWrite(onTargetA,  hitOnTargRed);
-      digitalWrite(offTargetA, hitOffTargRed);
-      digitalWrite(offTargetB, hitOffTargGreen);
-      digitalWrite(onTargetB,  hitOnTargGreen);
+   if (justHitOnTargRed || justHitOffTargRed || justHitOffTargGreen || justHitOnTargGreen) {
       digitalWrite(buzzerPin,  HIGH);
-      // For serial
-      String serData = "";
-      if (hitOnTargRed) {
-    	  serData = serData + "R\n";
-      }
-      if (hitOffTargRed) {
-		  serData = serData + "r\n";
-      }
-      if (hitOnTargGreen) {
-    	  serData = serData + "G\n";
-      }
-      if (hitOnTargGreen) {
-    	  serData = serData + "g\n";
-      }
-      if (serData.length() > 0) {
-    	  Serial.println(serData);
-      }
-      resetValues();
+   }
+   if (justHitOnTargRed) {
+      hitOnTargRed = true;
+	   digitalWrite(onTargetA, true);
+	   Serial.println("R");
+   }
+   if (justHitOffTargRed) {
+      hitOffTargRed = true;
+	   digitalWrite(offTargetA, true);
+	   Serial.println("r");
+   }
+   if (justHitOffTargGreen) {
+      hitOffTargGreen = true;
+	   digitalWrite(offTargetB, true);
+	   Serial.println("g");
+   }
+   if (justHitOnTargGreen) {
+      hitOnTargGreen = true;
+      digitalWrite(onTargetB,  true);
+      Serial.println("G");
    }
 }
 
@@ -567,7 +558,7 @@ void signalHits() {
 void resetValues() {
    delay(BUZZERTIME);             // wait before turning off the buzzer
    digitalWrite(buzzerPin,  LOW);
-   delay(LIGHTTIME-BUZZERTIME);   // wait before turning off the lights
+   delay(max(LIGHTTIME, lockout[currentMode] / 1000) - BUZZERTIME);   // wait before turning off the lights
    digitalWrite(onTargetA,  LOW);
    digitalWrite(offTargetA, LOW);
    digitalWrite(offTargetB, LOW);
