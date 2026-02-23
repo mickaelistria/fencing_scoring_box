@@ -75,8 +75,8 @@ bool lockedOut    = false;
 // the minimum amount of time the tip needs to be depressed (in contact) for sabre 0.1ms -> 1ms
 // These values are stored as micro seconds for more accuracy
 //                         foil   epee   sabre
-const long lockout [] = {300000,  45000, 170000};  // the lockout time between hits
-const long depress [] = { 14000,   2000,   1000};  // the minimum amount of time the tip needs to be depressed
+long lockout [] = {300000,  45000, 170000};  // the lockout time between hits
+long depress [] = { 14000,   2000,   1000};  // the minimum amount of time the tip needs to be depressed
 
 //=================
 // mode constants
@@ -187,16 +187,7 @@ void loop() {
    // use a while as a main loop as the loop() has too much overhead for fast analogReads
    // we get a 3-4% speed up on the loop this way
    while(1) {
-	  if (Serial.available()) {
-		  String input = Serial.readString();
-		  for (int i = 0; i < 3; i++) {
-			 if (WEAPON_NAMES[i].compareTo(input) == 0) {
-				 currentMode = i;
-				 setModeLeds();
-				 tellMode();
-			 }
-		  }
-	  }
+	  readSerial();
       updateBlinkingModeLed();
       checkIfModeChanged();
       // read analog pins
@@ -226,6 +217,62 @@ void loop() {
    }
 }
 
+int findWeaponId(String weaponName) {
+	for (int i = 0; i < 3; i++) {
+		if (WEAPON_NAMES[i].compareTo(weaponName) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+void readSerial() {
+	if (Serial.available()) {
+		String input = Serial.readString();
+      if (input.endsWith("\n")) {
+         input = input.substring(0, input.length() - 1);
+      }
+      if (input.equals("?")) {
+         tellMode();
+         // tellConf
+         return;
+      }
+		int weaponId = findWeaponId(input);
+		if (weaponId >= 0) {
+			currentMode = weaponId;
+			setModeLeds();
+			tellMode();
+         return;
+		}
+      int indexOfDot = input.lastIndexOf(".");
+      int indexOfEquals = input.lastIndexOf("=");
+      if (indexOfDot > 0 && indexOfEquals > 0) {
+         String weaponName = input.substring(0, indexOfDot);
+         weaponId = findWeaponId(weaponName);
+         if (weaponId >= 0) {
+            String configure = input.substring(indexOfDot + 1, indexOfEquals);
+            long* tableToSet = 0;
+            if (configure.equals("depress")) {
+               tableToSet = depress;
+            } else if (configure.equals("lockout")) {
+               tableToSet = lockout;
+            }
+            if (tableToSet > 0) {
+               long value = input.substring(indexOfEquals + 1, input.length()).toInt();
+               if (value > 0) {
+                  if (tableToSet == lockout) {
+                     Serial.print("lockout[");
+                  }
+                  Serial.print(weaponId);
+                  Serial.print("]=");
+                  Serial.println(value);
+                  tableToSet[weaponId] = value;
+               }
+            }
+         }
+      }
+	}
+}
 
 //=====================
 // Mode pin interrupt
