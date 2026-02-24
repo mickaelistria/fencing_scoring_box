@@ -150,8 +150,11 @@ void setup() {
 }
 
 void tellMode() {
-   Serial.print("Mode changed to: ");
-   Serial.println(WEAPON_NAMES[currentMode]);
+   Serial.println("arme=" + WEAPON_NAMES[currentMode]);
+   for (int i = 0; i < 3; i++) {
+	   Serial.println(WEAPON_NAMES[i] + ".depress=" + depress[i]);
+	   Serial.println(WEAPON_NAMES[i] + ".lockout=" + lockout[i]);
+   }
 }
 
 //=============
@@ -225,44 +228,60 @@ int findWeaponId(String weaponName) {
 	return -1;
 }
 
+void processSerialLine(String input) {
+	while (input.endsWith("\r") || input.endsWith("\n")) {
+		input = input.substring(0, input.length() - 1);
+	}
+	if (input.equals("?")) {
+		tellMode();
+		// tellConf
+		return;
+	}
+	int weaponId = findWeaponId(input);
+	if (weaponId >= 0) {
+		currentMode = weaponId;
+		setModeLeds();
+		tellMode();
+		return;
+	}
+	int indexOfDot = input.lastIndexOf(".");
+	int indexOfEquals = input.lastIndexOf("=");
+	if (indexOfDot > 0 && indexOfEquals > 0) {
+		String weaponName = input.substring(0, indexOfDot);
+		weaponId = findWeaponId(weaponName);
+		if (weaponId >= 0) {
+			String configure = input.substring(indexOfDot + 1, indexOfEquals);
+			long *tableToSet = 0;
+			if (configure.equals("depress")) {
+				tableToSet = depress;
+			} else if (configure.equals("lockout")) {
+				tableToSet = lockout;
+			}
+			if (tableToSet > 0) {
+
+				long value =
+						input.substring(indexOfEquals + 1, input.length()).toInt();
+				if (value > 0) {
+					tableToSet[weaponId] = value;
+				}
+			}
+		}
+	}
+}
+String currentSerial;
 void readSerial() {
 	if (Serial.available()) {
-		String input = Serial.readString();
-      if (input.endsWith("\n")) {
-         input = input.substring(0, input.length() - 1);
-      }
-      if (input.equals("?")) {
-         tellMode();
-         // tellConf
-         return;
-      }
-		int weaponId = findWeaponId(input);
-		if (weaponId >= 0) {
-			currentMode = weaponId;
-			setModeLeds();
-			tellMode();
-         return;
+		String input = currentSerial + Serial.readString();
+		int i = -1;
+		while ((i = input.indexOf('\n')) >= 0) {
+			String line = input.substring(0, i);
+			processSerialLine(line);
+			input = input.substring(i + 1, input.length());
 		}
-      int indexOfDot = input.lastIndexOf(".");
-      int indexOfEquals = input.lastIndexOf("=");
-      if (indexOfDot > 0 && indexOfEquals > 0) {
-         String weaponName = input.substring(0, indexOfDot);
-         weaponId = findWeaponId(weaponName);
-         if (weaponId >= 0) {
-            String configure = input.substring(indexOfDot + 1, indexOfEquals);
-            long* tableToSet = 0;
-            if (configure.equals("depress")) {
-               tableToSet = depress;
-            } else if (configure.equals("lockout")) {
-               tableToSet = lockout;
-            }
-            if (tableToSet > 0) {
-               long value = input.substring(indexOfEquals + 1, input.length()).toInt();
-               if (value > 0) {
-                  tableToSet[weaponId] = value;
-               }
-            }
-         }
+		if (input.length() > 0) {
+			currentSerial = input;
+		} else {
+         currentSerial = input.substring(0,0);
       }
 	}
 }
@@ -529,6 +548,7 @@ void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTa
    if (justHitOnTargRed || justHitOffTargRed || justHitOffTargGreen || justHitOnTargGreen) {
       digitalWrite(buzzerPin,  HIGH);
    }
+   // Serial must use shortest possible messages here to not cause a big delay
    if (justHitOnTargRed) {
       hitOnTargRed = true;
 	   digitalWrite(onTargetA, true);

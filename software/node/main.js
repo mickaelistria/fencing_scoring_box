@@ -10,15 +10,16 @@ let mainWindow
 function createWindow() {
     // Create the browser window.
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1280,
+        height: 800,
+		fullscreen: true,
         webPreferences: {
             nodeIntegration: true, // to allow require
             contextIsolation: false, // allow use with Electron 12+
             preload: path.join(__dirname, 'preload.js')
         }
     })
-//	mainWindow.setMenu(null);
+	mainWindow.setMenu(null);
     // and load the index.html of the app.
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'index.html'),

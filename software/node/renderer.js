@@ -28,9 +28,29 @@ function updateConnectionValues() {
 	document.getElementById("serialConnection").value = port.path;
 	document.getElementById("baudrate").value = port.baudRate;
 }
-function selectWeapon(weapon) {
-	port.write(weapon);
+
+function applyWeapon(weapon) {
+	port.write(weapon + "\n");
 	document.getElementById("weaponDialog").close(weapon);
+}
+function applyTimes() {
+	// TODO consider setting a class and factorize using getElementsByClass
+	port.write("SABRE.depress=" + document.getElementById("SABRE.depress").value + "\n");
+	port.write("SABRE.lockout=" + document.getElementById("SABRE.lockout").value + "\n");
+	port.write("EPEE.depress=" + document.getElementById("EPEE.depress").value + "\n");
+	port.write("EPEE.lockout=" + document.getElementById("EPEE.lockout").value + "\n");
+	port.write("FLEURET.depress=" + document.getElementById("FLEURET.depress").value + "\n");
+	port.write("FLEURET.lockout=" + document.getElementById("FLEURET.lockout").value + "\n");
+	document.getElementById("configuration").close(null);
+	port.write("?\n"); // to get updated values
+}
+function resetFIERules() {
+	document.getElementById("FLEURET.depress").value=14000;
+	document.getElementById("FLEURET.lockout").value=300000
+	document.getElementById("EPEE.depress").value=2000
+	document.getElementById("EPEE.lockout").value=45000
+	document.getElementById("SABRE.depress").value=1000
+	document.getElementById("SABRE.lockout").value=170000
 }
 
 var port = {};
@@ -56,12 +76,21 @@ function setupSerialPort(path, baudrate) {
 	  path: path,
 	  baudRate: baudrate,
 	});
+	var currentLine = "";
 	// Switches the port into "flowing mode"
 	port.on('data', function (data) {
 	  const text = new TextDecoder().decode(data);
 	  serialLog.push({text: text, time: Date.now(), isError: false});
-	  const lines = text.split(/\r?\n/);
+	  var lines = text.split(/\r?\n/);
+	  lines[0] = currentLine + lines[0];
+	  if (text.charAt(text.length - 1) != '\n') {
+		currentLine = lines[lines.length - 1];
+		lines = lines.slice(0, -1);
+	  } else {
+		currentLine = "";
+	  }
 	  lines.forEach(line => {
+		console.log(line);
 		if (line.startsWith("R")) {
 			document.getElementById('hitOnTargetA').style.backgroundColor = "red";
 			document.getElementById('hitOnTargetA').innerText = "Touche!";
@@ -72,9 +101,9 @@ function setupSerialPort(path, baudrate) {
 			document.getElementById('hitOffTargetB').style.backgroundColor = "lightyellow";	
 			document.getElementById('hitOffTargetB').innerText = "Touche!";
 		} else if (line.startsWith("G")) {
-			document.getElementById('hitOnTargetB').style.backgroundColor = "green";		
+			document.getElementById('hitOnTargetB').style.backgroundColor = "lightgreen";		
 			document.getElementById('hitOnTargetB').innerText = "Touche!";
-		} else if (line.includes("0")) {
+		} else if (line.startsWith("0")) {
 			document.getElementById('hitOnTargetA').style.backgroundColor = "#100000";
 			document.getElementById('hitOnTargetA').innerText = "";
 			document.getElementById('hitOffTargetA').style.backgroundColor = null;
@@ -83,16 +112,23 @@ function setupSerialPort(path, baudrate) {
 			document.getElementById('hitOffTargetB').innerText = "";
 			document.getElementById('hitOnTargetB').style.backgroundColor = "#001000";
 			document.getElementById('hitOnTargetB').innerText = "";
-		} else if (line.includes("EPEE")) {
-			document.getElementById("arme").innerText = "Epée";
-		} else if (line.includes("SABRE")) {
-			document.getElementById("arme").innerText = "Sabre";
-		} else if (line.includes("FLEURET")) {
-			document.getElementById("arme").innerText = "Fleuret";
+		} else {
+			const segments = line.split("=");
+			if (segments.length == 2) {
+				const elt = document.getElementById(segments[0]);
+				if (elt) {
+					if (elt.tagName === "INPUT") {
+						elt.value = segments[1];
+					} else {
+						elt.innerHTML = segments[1];
+					}
+				}
+			}
 		}
 	  });
 	});
 	port.on('error', err => {
+		console.log(err);
 		serialLog.push({text: err.message, time: Date.now(), isError: true});
 	});
 	updateConnectionValues();
