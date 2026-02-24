@@ -5,7 +5,7 @@
       <title>🤺 L'arbitre de touche 🟥⬜⬜🟩</title>
    </head>
    
-   <body style="min-height: 100%; font-family:  Museo Slab,Georgia,Times New Roman,Times,serif; font-weight: bold; font-size: 70px; background-color: #101010;">
+   <body style="height: 90%; font-family:  Museo Slab,Georgia,Times New Roman,Times,serif; font-weight: bold; font-size: 70px; background-color: #101010;">
 	<dialog id="weaponDialog">
 	  <form>
 	    <p>
@@ -37,7 +37,7 @@
 	<dialog id="configuration">
 	  <form>
 	    <p>
-	        Règles et des temps
+	        Règles et temps
 	    </p>
 		<table>
 			<tr>
@@ -71,12 +71,13 @@
 		<td id="hitOnTargetA" style="background-color: #100000; height: 100%; width: 20%; border: solid black 5px; text-align: center;"></td>
 		<td id="hitOffTargetA" style="width: 20%; border: solid black 5px; text-align: center;"></td>
 		<td style="width: 20%; position: relative; text-align: center;">
-			<p id="arme" style="color: white">⚙️ Connection en cours... </p>
-			<button style="background-color: inherit; font-size:inherit;" type="button" onclick='document.getElementById("weaponDialog").showModal()'>⚔️</button>
-			<div style="position: absolute; bottom: 0;">
-				<button style="background-color: inherit; font-size:inherit;" type="button" onclick='document.getElementById("connectionDialog").showModal()'>🔌</button>
-				<button style="background-color: inherit; font-size:inherit;" type="button" onclick='document.getElementById("configuration").showModal()'>⏱️</button>
-			</div>
+				<p id="arme" style="color: white">⚙️ Connection en cours... </p>
+				<button style="background-color: inherit; font-size:inherit;" type="button" onclick='document.getElementById("weaponDialog").showModal()'>⚔️</button>
+				<div style="align-self: stretch;"/> <!-- Filler -->
+				<div style="position: absolute; bottom: 0; left: 0; right: 0; margin-inline: auto;	width: fit-content;">
+					<button style="background-color: inherit; font-size:inherit;" type="button" onclick='document.getElementById("connectionDialog").showModal()'>🔌</button>
+					<button style="background-color: inherit; font-size:inherit;" type="button" onclick='document.getElementById("configuration").showModal()'>⏱️</button>
+				</div>
 		</td>
 		<td id="hitOffTargetB" style="width: 20%; border: solid black 5px; text-align: center;"></td>
 		<td id="hitOnTargetB" style="background-color: #001000; width: 20%; border: solid black 5px; text-align: center;"></td>
