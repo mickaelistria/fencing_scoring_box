@@ -14,10 +14,17 @@ It currently supports
 
 We hope to add support for
 * Provide assistance in choosing a board to connect to
-* targeting mobile device (eg Android) with eg. a Cordova package 
+* targeting mobile device (eg Android) with eg. a Cordova package
+
+![Screenshot](screenshot.png "Screenshot")
 
 ## Technologies
 
 * HTML, JS for rendering
 * serialport-node for Serial connection
-* Electron for packaging as application
+* Electron for packaging as application ()
+
+## Test it
+
+* From this source folder, run `npm install`, then
+* Run `electron main.js`

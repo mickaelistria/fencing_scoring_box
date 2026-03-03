@@ -10,53 +10,30 @@ weaspons, foil, epee and sabre.
 Detailed assembly instructions are on instructables: 
 https://www.instructables.com/id/Arduino-Fencing-Scoring-Apparatus/
 
-Email me if you have any questions: wesnew(at)gmail(dot)com
-
-
 ## Directory Structure
 
 
-**Firmware**: the code that runs on the arduino including scoring boxes and test
-sketches.
+**Firmware**: the code that implements fencing rules on the arduino and notify of touches.
 
-**Hardware**: the circuit designs around the arduino showing how to connect up the
-lights and body wires.
+**Hardware**: the circuit designs around the arduino showing how to connect up the lights and body wires.
 
-**Software**: python code which communicates over the serial interface with the
-arduino to allow displaying of lights on a laptop or PC screen. This is a simple 
-test and further development is required.
+**Software**: Communicates over the serial interface with the arduino to allow displaying of lights on a laptop or PC screen, and control various settings.
 
 **Notes and research**  Pretty self explanitory
 
 ## Hardware Requirements
 
+Full configuration
  - 1 Arduino Uno or Nano (5v/16MHz)
  - 10 Resistors, 4 220R for LEDs, 6 1K for pullups/pulldowns
+ - 1 pullup switch to select weapon
  - 4 LEDs, 1 green, 1 red and 2 yellow/white
-
-
-## Percentage Complete
-
-Foil       100 %
-
-Epee       100 %
-
-Sabre       90 % - Just missing whipover functionality
-
-
-## TODOs
-
- - Implement and test whipover for sabre
-
-
-## Testing
-
- - Tested with an oscilloscope and all timings look great.
-
-
-## Extra features to add
-
- - Add some kind of screen
- - Serial to USB interface to use a laptop as the lights, timing and scoring,
-   similar to the VSM. This is already implemented on the device, just write
-   some code for the PC side. 
+ 
+Minimal configuration for sabre
+ - 1 Arduino Uno or Nano
+ - 4 10k resistors (we can ignore the "guard" wire)
+ - 1 laptop with the software client to get lights and control weapons
+ - Arduino board and laptop connected via Serial USB
+ 
+![MinimalSabreFront](hardware/minimalSabreFront.jpg "Minimal Sabre (Front)")
+![MinimalSabreFront](hardware/minimalSabreBack.jpg "Minimal Sabre (Back)")
