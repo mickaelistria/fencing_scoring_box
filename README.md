@@ -19,6 +19,8 @@ https://www.instructables.com/id/Arduino-Fencing-Scoring-Apparatus/
 
 **Software**: Communicates over the serial interface with the arduino to allow displaying of lights on a laptop or PC screen, and control various settings.
 
+![Scroing application screenshot](software/node/screenshot.png "Scoring Application Screenshot")
+
 **Notes and research**  Pretty self explanitory
 
 ## Hardware Requirements
