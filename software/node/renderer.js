@@ -66,6 +66,19 @@ var port = {};
 var serialLog = [];
 var port = null;
 
+var osc = null;
+function buzz() {
+	if (osc == null) {
+		const context = new (window.AudioContext || window.webkitAudioContext)();
+		osc = context.createOscillator(); // instantiate an oscillator
+		osc.type = 'sawtooth'; // this is the default - also square, sawtooth, triangle
+		osc.frequency.value = 220; // Hz
+		osc.connect(context.destination); // connect it to the destination
+		osc.start(); // start the oscillator
+	}
+}
+// one context per document
+
 function setupSerialPort(path, baudrate) {
 	if (port) {
 		port.close();
@@ -94,16 +107,24 @@ function setupSerialPort(path, baudrate) {
 		if (line.startsWith("R")) {
 			document.getElementById('hitOnTargetA').style.backgroundColor = "red";
 			document.getElementById('hitOnTargetA').innerText = "Touche!";
+			buzz();
 		} else if (line.startsWith("r")) {
 			document.getElementById('hitOffTargetA').style.backgroundColor = "lightyellow";
 			document.getElementById('hitOffTargetA').innerText = "Touche!";
+			buzz();
 		} else if (line.startsWith("g")) {
 			document.getElementById('hitOffTargetB').style.backgroundColor = "lightyellow";	
 			document.getElementById('hitOffTargetB').innerText = "Touche!";
+			buzz();
 		} else if (line.startsWith("G")) {
 			document.getElementById('hitOnTargetB').style.backgroundColor = "lightgreen";		
 			document.getElementById('hitOnTargetB').innerText = "Touche!";
+			buzz();
 		} else if (line.startsWith("0")) {
+			if (osc) {
+				osc.stop();
+				osc = null;
+			}
 			document.getElementById('hitOnTargetA').style.backgroundColor = "#100000";
 			document.getElementById('hitOnTargetA').innerText = "";
 			document.getElementById('hitOffTargetA').style.backgroundColor = null;
