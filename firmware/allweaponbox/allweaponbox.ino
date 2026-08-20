@@ -25,23 +25,22 @@
 #define BUZZERTIME  1000  // length of time the buzzer is kept on after a hit (ms)
 #define LIGHTTIME   3000  // length of time the lights are kept on after a hit (ms)
 #define BAUDRATE    57600  // baudrate of the serial debug interface
+#define ENABLE_SERIAL 1
 
 //============
 // Pin Setup
 //============
-const uint8_t shortLEDA  =  8;    // Short Circuit A Light
 const uint8_t onTargetA  =  9;    // On Target A Light
 const uint8_t offTargetA = 10;    // Off Target A Light
 const uint8_t offTargetB = 11;    // Off Target B Light
 const uint8_t onTargetB  = 12;    // On Target B Light
-const uint8_t shortLEDB  = 13;    // Short Circuit A Light
 
-const uint8_t groundPinA = A0;    // Ground A pin - Analog
-const uint8_t weaponPinA = A1;    // Weapon A pin - Analog
-const uint8_t lamePinA   = A2;    // Lame   A pin - Analog (Epee return path)
-const uint8_t lamePinB   = A3;    // Lame   B pin - Analog (Epee return path)
-const uint8_t weaponPinB = A4;    // Weapon B pin - Analog
-const uint8_t groundPinB = A5;    // Ground B pin - Analog
+const uint8_t groundPinA = 2;    // Ground A pin - Analog
+const uint8_t weaponPinA = 3;    // Weapon A pin - Analog
+const uint8_t lamePinA   = 4;    // Lame   A pin - Analog (Epee return path)
+const uint8_t lamePinB   = 6;    // Lame   B pin - Analog (Epee return path)
+const uint8_t weaponPinB = 7;    // Weapon B pin - Analog
+const uint8_t groundPinB = 8;    // Ground B pin - Analog
 
 const uint8_t modePin    =  2;        // Mode change button interrupt pin 0 (digital pin 2)
 const uint8_t buzzerPin  =  3;        // buzzer pin
@@ -116,7 +115,14 @@ bool done = false;
 // Configuration
 //================
 void setup() {
-   // set the internal pullup resistor on modePin
+
+   pinMode(weaponPinA, INPUT_PULLUP);
+   pinMode(weaponPinB, INPUT_PULLUP);
+   pinMode(lamePinA, INPUT_PULLDOWN);
+   pinMode(lamePinB, INPUT_PULLDOWN);
+   pinMode(groundPinA, INPUT_PULLDOWN);
+   pinMode(groundPinB, INPUT_PULLDOWN);
+
    pinMode(modePin, INPUT_PULLUP);
 
    // add the interrupt to the mode pin (interrupt is pin 0)
@@ -131,8 +137,6 @@ void setup() {
    pinMode(offTargetB, OUTPUT);
    pinMode(onTargetA,  OUTPUT);
    pinMode(onTargetB,  OUTPUT);
-   pinMode(shortLEDA,  OUTPUT);
-   pinMode(shortLEDB,  OUTPUT);
    pinMode(buzzerPin,  OUTPUT);
 
    digitalWrite(modeLeds[currentMode], HIGH);
@@ -141,27 +145,7 @@ void setup() {
    testLights();
 #endif
 
-   // this optimises the ADC to make the sampling rate quicker
-   //adcOpt();
-
-   Serial.begin(BAUDRATE);
-   tellMode();
-   resetValues();
-}
-
-void tellMode() {
-   Serial.println("arme=" + WEAPON_NAMES[currentMode]);
-   for (int i = 0; i < 3; i++) {
-	   Serial.println(WEAPON_NAMES[i] + ".depress=" + depress[i]);
-	   Serial.println(WEAPON_NAMES[i] + ".lockout=" + lockout[i]);
-   }
-}
-
-//=============
-// ADC config
-//=============
-void adcOpt() {
-
+#ifdef OPTIMIZE_ADC
    // the ADC only needs a couple of bits, the atmega is an 8 bit micro
    // so sampling only 8 bits makes the values easy/quicker to process
    // unfortunately this method only works on the Due.
@@ -180,6 +164,23 @@ void adcOpt() {
    bitClear(ADCSRA, ADPS0);
    bitClear(ADCSRA, ADPS1);
    bitSet  (ADCSRA, ADPS2);
+#endif
+
+#ifdef ENABLE_SERIAL
+   Serial.begin(BAUDRATE);
+#endif
+   tellMode();
+   resetValues();
+}
+
+void tellMode() {
+#ifdef ENABLE_SERIAL
+   Serial.println("arme=" + WEAPON_NAMES[currentMode]);
+   for (int i = 0; i < 3; i++) {
+	   Serial.println(WEAPON_NAMES[i] + ".depress=" + depress[i]);
+	   Serial.println(WEAPON_NAMES[i] + ".lockout=" + lockout[i]);
+   }
+#endif
 }
 
 
@@ -211,8 +212,10 @@ void loop() {
       }
       loopCount++;
       if ((micros()-now >= 1000000) && done == false) {
+#ifdef ENABLE_SERIAL
          Serial.print(loopCount);
          Serial.println(" readings in 1 sec");
+#endif
          done = true;
       }
 #endif
@@ -251,13 +254,13 @@ void processSerialLine(String input) {
 		weaponId = findWeaponId(weaponName);
 		if (weaponId >= 0) {
 			String configure = input.substring(indexOfDot + 1, indexOfEquals);
-			long *tableToSet = 0;
+			long *tableToSet = NULL;
 			if (configure.equals("depress")) {
 				tableToSet = depress;
 			} else if (configure.equals("lockout")) {
 				tableToSet = lockout;
 			}
-			if (tableToSet > 0) {
+			if (tableToSet != NULL) {
 
 				long value =
 						input.substring(indexOfEquals + 1, input.length()).toInt();
@@ -472,8 +475,8 @@ void epee() {
 }
 
 
-bool isAbout(unsigned int millivolts, unsigned int capturedADC) {
-   unsigned int measuredVoltage = ((capturedADC * 40) /* no term must be > 2^16 ~= 60000 */ / 1024) * 125;
+bool isAbout(int millivolts, int capturedADC) {
+   int measuredVoltage = ((capturedADC * 40) /* no term must be > 2^16 ~= 60000 */ / 1024) * 125;
    return abs(millivolts - measuredVoltage) < 500; // tolerance of 500mV, which is 10%
 }
 
@@ -552,22 +555,30 @@ void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTa
    if (justHitOnTargRed) {
       hitOnTargRed = true;
 	   digitalWrite(onTargetA, true);
+#ifdef ENABLE_SERIAL
 	   Serial.println("R");
+#endif
    }
    if (justHitOffTargRed) {
       hitOffTargRed = true;
 	   digitalWrite(offTargetA, true);
+#ifdef ENABLE_SERIAL
 	   Serial.println("r");
+#endif
    }
    if (justHitOffTargGreen) {
       hitOffTargGreen = true;
 	   digitalWrite(offTargetB, true);
+#ifdef ENABLE_SERIAL
 	   Serial.println("g");
+#endif
    }
    if (justHitOnTargGreen) {
       hitOnTargGreen = true;
       digitalWrite(onTargetB,  true);
+#ifdef ENABLE_SERIAL
       Serial.println("G");
+#endif
    }
 }
 
@@ -583,9 +594,9 @@ void resetValues() {
    digitalWrite(offTargetA, LOW);
    digitalWrite(offTargetB, LOW);
    digitalWrite(onTargetB,  LOW);
-   digitalWrite(shortLEDA,  LOW);
-   digitalWrite(shortLEDB,  LOW);
+#ifdef ENABLE_SERIAL
    Serial.println("0");
+#endif
 
    lockedOut    = false;
    depressAtime = 0;
@@ -610,8 +621,6 @@ void testLights() {
    digitalWrite(onTargetA,  HIGH);
    digitalWrite(offTargetB, HIGH);
    digitalWrite(onTargetB,  HIGH);
-   digitalWrite(shortLEDA,  HIGH);
-   digitalWrite(shortLEDB,  HIGH);
    delay(1000);
    resetValues();
 }
