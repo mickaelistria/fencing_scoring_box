@@ -18,6 +18,10 @@ We hope to add support for
 
 ![Screenshot](screenshot.png "Screenshot")
 
+## Protocol
+
+The protocol used to communicate with the Arduino board over Serial is described in all_weapon_box.ino. This software expects that the board sends and reads informations according to this protocol. 
+
 ## Technologies
 
 * HTML, JS for rendering
