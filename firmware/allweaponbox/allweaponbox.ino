@@ -19,7 +19,6 @@
 //============
 //TODO: set up debug levels correctly
 #define DEBUG 0
-//#define TEST_LIGHTS       // turns on lights for a second on start up
 //#define TEST_ADC_SPEED    // used to test sample rate of ADCs
 //#define REPORT_TIMING     // prints timings over serial interface
 #define BUZZERTIME  1000  // length of time the buzzer is kept on after a hit (ms)
@@ -105,10 +104,10 @@ bool done = false;
 class HitsFeedback {
    public:
       char* name;
-      virtual void setup() {}
-      virtual void tellMode() {}
-      virtual void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTargGreen, bool justHitOnTargGreen) {}
-      virtual void reset() {}
+      virtual void setup() = 0;
+      virtual void tellMode() = 0;
+      virtual void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTargGreen, bool justHitOnTargGreen) = 0;
+      virtual void reset() = 0;
 };
 
 class Buzzer : public HitsFeedback {
@@ -198,6 +197,17 @@ class IndividualLeds : public HitsFeedback {
       }
 };
 
+/**
+ * Send info to Serial, to display eg on laptop with companion app.
+ * Output protocol, sends to application:
+ * - 'R' to turn on red light
+ * - 'r' to turn on white light on red side
+ * - 'g' to turn on white light on green side
+ * - 'G' to turn on green light
+ * - '0' to reset all lights
+ * - 'arme=FLEURET' or 'arme=EPEE' or 'arme=SABRE' declared which weapon is being used
+ * - 'EPEE.depressed=NNNN', 'EPEE.lockout=NNNN', 'SABRE.depressed=NNNN' and so on to inform of timing as defined in rules
+ */
 class SerialFeedback : public HitsFeedback {
    public:
       SerialFeedback() {
