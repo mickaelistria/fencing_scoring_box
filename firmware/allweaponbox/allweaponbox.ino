@@ -29,13 +29,6 @@
 //============
 // Pin Setup
 //============
-const uint8_t shortLEDA  =  8;    // Short Circuit A Light
-const uint8_t onTargetA  =  9;    // On Target A Light
-const uint8_t offTargetA = 10;    // Off Target A Light
-const uint8_t offTargetB = 11;    // Off Target B Light
-const uint8_t onTargetB  = 12;    // On Target B Light
-const uint8_t shortLEDB  = 13;    // Short Circuit A Light
-
 const uint8_t groundPinA = A0;    // Ground A pin - Analog
 const uint8_t weaponPinA = A1;    // Weapon A pin - Analog
 const uint8_t lamePinA   = A2;    // Lame   A pin - Analog (Epee return path)
@@ -44,8 +37,6 @@ const uint8_t weaponPinB = A4;    // Weapon B pin - Analog
 const uint8_t groundPinB = A5;    // Ground B pin - Analog
 
 const uint8_t modePin    =  2;        // Mode change button interrupt pin 0 (digital pin 2)
-const uint8_t buzzerPin  =  3;        // buzzer pin
-const uint8_t modeLeds[] = {4, 5, 6}; // LED pins to indicate weapon mode selected {f e s}
 
 //=========================
 // values of analog reads
@@ -111,7 +102,191 @@ long loopCount = 0;
 bool done = false;
 #endif
 
+class HitsFeedback {
+   public:
+      char* name;
+      virtual void setup() {}
+      virtual void tellMode() {}
+      virtual void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTargGreen, bool justHitOnTargGreen) {}
+      virtual void reset() {}
+};
 
+class Buzzer : public HitsFeedback {
+   public:
+      const uint8_t buzzerPin = 3;
+      Buzzer() {
+         name = "Buzzer";
+      }
+      void setup() override {
+         pinMode(buzzerPin,  OUTPUT);
+      }
+      void tellMode() override {}
+      void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTargGreen, bool justHitOnTargGreen) override {
+         if (justHitOnTargRed || justHitOffTargRed || justHitOffTargGreen || justHitOnTargGreen) {
+               digitalWrite(buzzerPin,  HIGH);
+            }
+      }
+      void reset() override {
+         digitalWrite(buzzerPin, LOW);
+      }
+};
+
+class IndividualLeds : public HitsFeedback {
+   public:
+      const uint8_t shortLEDA  =  8;    // Short Circuit A Light
+      const uint8_t onTargetA  =  9;    // On Target A Light
+      const uint8_t offTargetA = 10;    // Off Target A Light
+      const uint8_t offTargetB = 11;    // Off Target B Light
+      const uint8_t onTargetB  = 12;    // On Target B Light
+      const uint8_t shortLEDB  = 13;    // Short Circuit A Light
+      const uint8_t modeLeds[3] = {4, 5, 6}; // LED pins to indicate weapon mode selected {f e s}
+      IndividualLeds() {
+         name = "Individual leds";
+      }
+      void setup() override {
+         // set the light pins to outputs
+         pinMode(offTargetA, OUTPUT);
+         pinMode(offTargetB, OUTPUT);
+         pinMode(onTargetA,  OUTPUT);
+         pinMode(onTargetB,  OUTPUT);
+         pinMode(shortLEDA,  OUTPUT);
+         pinMode(shortLEDB,  OUTPUT);
+         pinMode(modeLeds[0], OUTPUT);
+         pinMode(modeLeds[1], OUTPUT);
+         pinMode(modeLeds[2], OUTPUT);
+      }
+      void tellMode() override {
+         digitalWrite(modeLeds[FOIL_MODE],  LOW);
+         digitalWrite(modeLeds[EPEE_MODE],  LOW);
+         digitalWrite(modeLeds[SABRE_MODE], LOW);
+         digitalWrite(modeLeds[currentMode], HIGH);
+         if (currentMode == FOIL_MODE) {
+            digitalWrite(onTargetA, HIGH);
+         } else {
+            if (currentMode == EPEE_MODE) {
+            digitalWrite(onTargetB, HIGH);
+            } else {
+               if (currentMode == SABRE_MODE){
+                  digitalWrite(onTargetA, HIGH);
+                  digitalWrite(onTargetB, HIGH);
+               }
+            }
+         }
+         delay(500);
+         digitalWrite(onTargetA, LOW);
+         digitalWrite(onTargetB, LOW);
+      }
+      void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTargGreen, bool justHitOnTargGreen) override {
+         if (justHitOnTargRed) {
+	         digitalWrite(onTargetA, HIGH);
+         }
+         if (justHitOffTargRed) {
+            digitalWrite(offTargetA, HIGH);
+         }
+         if (justHitOffTargGreen) {
+            digitalWrite(offTargetB, HIGH);
+         }
+         if (justHitOnTargGreen) {
+            digitalWrite(onTargetB,  HIGH);
+         }
+      }
+      void reset() override {
+         digitalWrite(onTargetA, LOW);
+         digitalWrite(offTargetA, LOW);
+         digitalWrite(offTargetB, LOW);
+         digitalWrite(onTargetB, LOW);
+      }
+};
+
+class SerialFeedback : public HitsFeedback {
+   public:
+      SerialFeedback() {
+         name = "Serial";
+      }
+      void setup() override {
+         Serial.begin(BAUDRATE);
+         tellMode();
+      }
+      void tellMode() override {
+         Serial.println("arme=" + WEAPON_NAMES[currentMode]);
+         delay(2000);
+         for (int i = 0; i < 3; i++) {
+            Serial.println(WEAPON_NAMES[i] + ".depress=" + depress[i]);
+            Serial.println(WEAPON_NAMES[i] + ".lockout=" + lockout[i]);
+         }
+      }
+      void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTargGreen, bool justHitOnTargGreen) override {
+         if (justHitOnTargRed) {
+            Serial.println("R");
+         }
+         if (justHitOffTargRed) {
+            Serial.println("r");
+         }
+         if (justHitOffTargGreen) {
+            Serial.println("g");
+         }
+         if (justHitOnTargGreen) {
+            Serial.println("G");
+         }
+      }
+      void reset() override {
+         Serial.println("0");
+      }
+};
+
+#include "Adafruit_NeoPixel.h"
+class LedStripFeedback : public HitsFeedback {
+   private:
+      const uint8_t pin = 4;
+      const uint8_t pixelsPerColor = 10;
+      const uint8_t pixelsCount = 300;
+      const Adafruit_NeoPixel strip = Adafruit_NeoPixel(pixelsCount, pin, NEO_GRB + NEO_KHZ800);
+   public:
+      LedStripFeedback() {
+         name = "LedStrip";
+      }
+      void setup() override {
+         strip.begin();
+         //strip.setBrightness(50);  // luminosité de la LED (maximum 255)
+         reset();
+      }
+      void tellMode() override {
+         strip.setPixelColor(currentMode, strip.Color(255, 255, 0));
+         strip.show();
+      }
+     void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTargGreen, bool justHitOnTargGreen) override {
+         strip.setPixelColor(currentMode, strip.Color(255, 255, 0));
+         if (justHitOnTargRed) {
+            for (int i = 0; i < pixelsPerColor; i++) {
+               strip.setPixelColor(3 + i, strip.Color(255, 0, 0));
+            }
+         }
+         if (justHitOffTargRed) {
+            for (int i = 0; i < pixelsPerColor; i++) {
+               strip.setPixelColor(3 + pixelsPerColor + i, strip.Color(255, 255, 255));
+            }
+         }
+         if (justHitOffTargGreen) {
+            for (int i = 0; i < pixelsPerColor; i++) {
+               strip.setPixelColor(3 + 2 * pixelsPerColor + i, strip.Color(255, 255, 255));
+            }
+         }
+         if (justHitOnTargGreen) {
+            for (int i = 0; i < pixelsPerColor; i++) {
+               strip.setPixelColor(3 +3 * pixelsPerColor + i, strip.Color(0, 255, 0));
+            }
+         }
+         strip.show();
+     }
+     void reset() override {
+         strip.clear();
+         tellMode();
+     }
+
+};
+
+
+HitsFeedback* feedbacks[] = { new LedStripFeedback(), new SerialFeedback() };
 //================
 // Configuration
 //================
@@ -121,39 +296,20 @@ void setup() {
 
    // add the interrupt to the mode pin (interrupt is pin 0)
    attachInterrupt(digitalPinToInterrupt(modePin), changeMode, RISING);
-   pinMode(modeLeds[0], OUTPUT);
-   pinMode(modeLeds[1], OUTPUT);
-   pinMode(modeLeds[2], OUTPUT);
    pinMode(LED_BUILTIN, OUTPUT);
 
-   // set the light pins to outputs
-   pinMode(offTargetA, OUTPUT);
-   pinMode(offTargetB, OUTPUT);
-   pinMode(onTargetA,  OUTPUT);
-   pinMode(onTargetB,  OUTPUT);
-   pinMode(shortLEDA,  OUTPUT);
-   pinMode(shortLEDB,  OUTPUT);
-   pinMode(buzzerPin,  OUTPUT);
-
-   digitalWrite(modeLeds[currentMode], HIGH);
-
-#ifdef TEST_LIGHTS
-   testLights();
-#endif
-
+   for (int i = 0; i < sizeof(feedbacks) / sizeof(feedbacks[0]); i++) {
+      feedbacks[i]->setup();
+   }
+   tellMode();
    // this optimises the ADC to make the sampling rate quicker
    //adcOpt();
-
-   Serial.begin(BAUDRATE);
-   tellMode();
    resetValues();
 }
 
 void tellMode() {
-   Serial.println("arme=" + WEAPON_NAMES[currentMode]);
-   for (int i = 0; i < 3; i++) {
-	   Serial.println(WEAPON_NAMES[i] + ".depress=" + depress[i]);
-	   Serial.println(WEAPON_NAMES[i] + ".lockout=" + lockout[i]);
+   for (int i = 0; i < sizeof(feedbacks) / sizeof(feedbacks[0]); i++) {
+      feedbacks[i]->tellMode();
    }
 }
 
@@ -234,13 +390,11 @@ void processSerialLine(String input) {
 	}
 	if (input.equals("?")) {
 		tellMode();
-		// tellConf
 		return;
 	}
 	int weaponId = findWeaponId(input);
 	if (weaponId >= 0) {
 		currentMode = weaponId;
-		setModeLeds();
 		tellMode();
 		return;
 	}
@@ -302,31 +456,6 @@ void updateBlinkingModeLed() {
    digitalWrite(LED_BUILTIN, BLINKING[currentMode][now]);
 }
 
-//============================
-// Sets the correct mode led
-//============================
-void setModeLeds() {
-   digitalWrite(modeLeds[FOIL_MODE],  LOW);
-   digitalWrite(modeLeds[EPEE_MODE],  LOW);
-   digitalWrite(modeLeds[SABRE_MODE], LOW);
-   digitalWrite(modeLeds[currentMode], HIGH);
-   if (currentMode == FOIL_MODE) {
-      digitalWrite(onTargetA, HIGH);
-   } else {
-      if (currentMode == EPEE_MODE) {
-        digitalWrite(onTargetB, HIGH);
-      } else {
-         if (currentMode == SABRE_MODE){
-            digitalWrite(onTargetA, HIGH);
-            digitalWrite(onTargetB, HIGH);
-         }
-      }
-   }
-   delay(500);
-   digitalWrite(onTargetA, LOW);
-   digitalWrite(onTargetB, LOW);
-}
-
 
 //========================
 // Run when mode changed
@@ -337,7 +466,6 @@ void checkIfModeChanged() {
     	 currentMode = (currentMode + 1) % 3;
       }
       delay(500); // avoid pressure to cause more changes than expected
-      setModeLeds();
       tellMode();
       modeJustChangedFlag = false;
    }
@@ -544,30 +672,21 @@ void sabre() {
 // Signal Hits
 //==============
 void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTargGreen, bool justHitOnTargGreen) {
-   // non time critical, this is run after a hit has been detected
-   if (justHitOnTargRed || justHitOffTargRed || justHitOffTargGreen || justHitOnTargGreen) {
-      digitalWrite(buzzerPin,  HIGH);
-   }
    // Serial must use shortest possible messages here to not cause a big delay
    if (justHitOnTargRed) {
       hitOnTargRed = true;
-	   digitalWrite(onTargetA, true);
-	   Serial.println("R");
    }
    if (justHitOffTargRed) {
       hitOffTargRed = true;
-	   digitalWrite(offTargetA, true);
-	   Serial.println("r");
    }
    if (justHitOffTargGreen) {
       hitOffTargGreen = true;
-	   digitalWrite(offTargetB, true);
-	   Serial.println("g");
    }
    if (justHitOnTargGreen) {
       hitOnTargGreen = true;
-      digitalWrite(onTargetB,  true);
-      Serial.println("G");
+   }
+   for (int i = 0; i < sizeof(feedbacks) / sizeof(feedbacks[0]); i++) {
+      feedbacks[i]->signalHits(justHitOnTargRed, justHitOffTargRed, justHitOffTargGreen, justHitOnTargGreen);
    }
 }
 
@@ -577,15 +696,7 @@ void signalHits(bool justHitOnTargRed, bool justHitOffTargRed, bool justHitOffTa
 //======================
 void resetValues() {
    delay(BUZZERTIME);             // wait before turning off the buzzer
-   digitalWrite(buzzerPin,  LOW);
    delay(max(LIGHTTIME, lockout[currentMode] / 1000) - BUZZERTIME);   // wait before turning off the lights
-   digitalWrite(onTargetA,  LOW);
-   digitalWrite(offTargetA, LOW);
-   digitalWrite(offTargetB, LOW);
-   digitalWrite(onTargetB,  LOW);
-   digitalWrite(shortLEDA,  LOW);
-   digitalWrite(shortLEDB,  LOW);
-   Serial.println("0");
 
    lockedOut    = false;
    depressAtime = 0;
@@ -597,21 +708,9 @@ void resetValues() {
    hitOffTargRed = false;
    hitOnTargGreen  = false;
    hitOffTargGreen = false;
-
+   for (int i = 0; i < sizeof(feedbacks) / sizeof(feedbacks[0]); i++) {
+      feedbacks[i]->reset();
+   }
    delay(100);
 }
 
-
-//==============
-// Test lights
-//==============
-void testLights() {
-   digitalWrite(offTargetA, HIGH);
-   digitalWrite(onTargetA,  HIGH);
-   digitalWrite(offTargetB, HIGH);
-   digitalWrite(onTargetB,  HIGH);
-   digitalWrite(shortLEDA,  HIGH);
-   digitalWrite(shortLEDB,  HIGH);
-   delay(1000);
-   resetValues();
-}
