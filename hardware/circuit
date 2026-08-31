@@ -4,12 +4,12 @@
                                     _____//______
                                     |           |
   Grn Lame Pin (A) o----------------| A2     A3 |----------------o Red Lame Pin (A)
-                                    |           |           |           |
+                        |           |           |           |           |
                         R           |           |           R
-                        |   5V___   |  Arduino  |  5V___    |
-                       GND     |    |           |     |    GND
-                               R    |           |     R
-                               |    |           |     |
+                        |           |  Arduino  |           |
+                       GND          |           |          GND
+                                    |           |     
+                                    |           |     
 Grn Weapon Pin (B) o----------------| A1     A4 |----------------o Red Weapon Pin (B)
                                     |           |
                                     |           |
@@ -42,8 +42,9 @@ Grn Weapon Pin (B) o----------------| A1     A4 |----------------o Red Weapon Pi
 
 
 Notes:
-1. Pullup and Pulldown resistor values should be 1K much higher then this and the line lines and high resistors act as an RC filter
-2. LED resistor values should be 220R but any value that limits the current enough for the LEDs will work
+1. Use internal pull-up resistor for weapon (INPUT_PULLUP), est ~20kΩ
+2. Pullup and Pulldown resistor values should be 1K much higher then this and the line lines and high resistors act as an RC filter
+3. LED resistor values should be 220R but any value that limits the current enough for the LEDs will work
 
 
 

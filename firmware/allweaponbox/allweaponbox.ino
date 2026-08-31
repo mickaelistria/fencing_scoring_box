@@ -303,6 +303,8 @@ HitsFeedback* feedbacks[] = { new LedStripFeedback(), new SerialFeedback() };
 void setup() {
    // set the internal pullup resistor on modePin
    pinMode(modePin, INPUT_PULLUP);
+   pinMode(weaponPinA, INPUT_PULLUP);
+   pinMode(weaponPinB, INPUT_PULLUP);
 
    // add the interrupt to the mode pin (interrupt is pin 0)
    attachInterrupt(digitalPinToInterrupt(modePin), changeMode, RISING);
